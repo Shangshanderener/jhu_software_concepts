@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Home - {{ info.name }}{% endblock %}
+
+{% block content %}
+<div class="homepage-container">
+    <div class="content-wrapper">
+        <!-- Bio Section (Left) -->
+        <div class="bio-section">
+            <h1 class="name">{{ info.name }}</h1>
+            <h2 class="position">{{ info.position }}</h2>
+            <div class="bio-text">
+                <p>{{ info.bio }}</p>
+            </div>
+        </div>
+        
+        <!-- Image Section (Right) -->
+        <div class="image-section">
+            <img src="{{ url_for('static', filename='images/profile.jpg') }}" 
+                 alt="Profile Picture" 
+                 class="profile-image"
+                 onerror="this.src='{{ url_for('static', filename='images/placeholder.jpg') }}'">
+        </div>
+    </div>
+</div>
+{% endblock %}

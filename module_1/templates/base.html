@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Personal Developer Website{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <ul class="nav-list">
+            <li><a href="{{ url_for('homepage.index') }}" 
+                   class="nav-link {% if current_page == 'home' %}active{% endif %}">Home</a></li>
+            <li><a href="{{ url_for('contact.contact') }}" 
+                   class="nav-link {% if current_page == 'contact' %}active{% endif %}">Contact</a></li>
+            <li><a href="{{ url_for('projects.projects') }}" 
+                   class="nav-link {% if current_page == 'projects' %}active{% endif %}">Projects</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2024 Personal Developer Website. All rights reserved.</p>
+    </footer>
+</body>
+</html>
