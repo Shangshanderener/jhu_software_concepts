@@ -34,13 +34,9 @@ def _fetch_page(page_num, retries=3):
     
     for attempt in range(retries):
         try:
-            # Create request with a user-agent header
             req = urllib.request.Request(
                 url,
-                headers={
-                    'User-Agent': 'SuperHan/1.0 (Educational Research Bot)',
-                    'Accept': 'text/html,application/xhtml+xml',
-                }
+                headers={'User-Agent': 'SuperHan/1.0 (Educational Research Bot)'}
             )
             
             with urllib.request.urlopen(req, timeout=30) as response:
@@ -170,8 +166,6 @@ def _parse_entry(rows):
         status_div = cells[3].find('div')
         if status_div:
             status_text = status_div.get_text(strip=True)
-            # status_info = _parse_status(status_text)
-            # entry['status'] = f"{status_info['status']}" + (f" on {status_info['decision_date']}" if status_info['decision_date'] else "")
             entry['status'] = status_text
             
     # Cell 4: URL link (if exists)
@@ -291,9 +285,9 @@ def scrape_data(num_pages=1500, delay=1.0, start_page=1):
         
         print(f"Got {len(entries)} entries (total: {len(all_entries)})")
         
-        # Rate limiting - be respectful to the server
-        if page_num < start_page + num_pages - 1:
-            time.sleep(delay)
+        # Rate limiting
+        # if page_num < start_page + num_pages - 1:
+        #     time.sleep(delay)
             
     print(f"\nScraping complete! Total entries: {len(all_entries)}")
     return all_entries
