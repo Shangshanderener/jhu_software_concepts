@@ -8,6 +8,9 @@ import os
 import re
 import sys
 import difflib
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import lru_cache
+import threading
 from typing import Any, Dict, List, Tuple
 
 from flask import Flask, jsonify, request
@@ -111,29 +114,35 @@ FEW_SHOTS: List[Tuple[Dict[str, str], Dict[str, str]]] = [
 ]
 
 _LLM: Llama | None = None
+_LLM_LOCK = threading.Lock()
 
 
 def _load_llm() -> Llama:
-    """Download (or reuse) the GGUF file and initialize llama.cpp."""
+    """Download (or reuse) the GGUF file and initialize llama.cpp (thread-safe)."""
     global _LLM
     if _LLM is not None:
         return _LLM
 
-    model_path = hf_hub_download(
-        repo_id=MODEL_REPO,
-        filename=MODEL_FILE,
-        local_dir="models",
-        local_dir_use_symlinks=False,
-        force_filename=MODEL_FILE,
-    )
+    with _LLM_LOCK:
+        # Double-check after acquiring lock
+        if _LLM is not None:
+            return _LLM
 
-    _LLM = Llama(
-        model_path=model_path,
-        n_ctx=N_CTX,
-        n_threads=N_THREADS,
-        n_gpu_layers=N_GPU_LAYERS,
-        verbose=False,
-    )
+        model_path = hf_hub_download(
+            repo_id=MODEL_REPO,
+            filename=MODEL_FILE,
+            local_dir="models",
+            local_dir_use_symlinks=False,
+            force_filename=MODEL_FILE,
+        )
+
+        _LLM = Llama(
+            model_path=model_path,
+            n_ctx=N_CTX,
+            n_threads=N_THREADS,
+            n_gpu_layers=N_GPU_LAYERS,
+            verbose=False,
+        )
     return _LLM
 
 
@@ -204,9 +213,53 @@ def _post_normalize_university(uni: str) -> str:
     match = _best_match(u, CANON_UNIS, cutoff=0.86)
     return match or u or "Unknown"
 
+# Cache for LLM results to avoid redundant calls
+_LLM_CACHE: Dict[str, Tuple[str, str]] = {}
 
-def _call_llm(program_text: str) -> Dict[str, str]:
-    """Query the tiny LLM and return standardized fields."""
+# Parallel processing config
+MAX_WORKERS = int(os.getenv("MAX_WORKERS", "4"))
+
+
+def _try_rule_based_parse(program_text: str) -> Tuple[str, str] | None:
+    """
+    Attempt to parse program/university using rules only.
+    Returns (program, university) if confident, else None to trigger LLM.
+    """
+    if not program_text or not program_text.strip():
+        return ("Unknown", "Unknown")
+
+    # Parse using comma, "at", or "@" separators
+    s = re.sub(r"\s+", " ", program_text).strip().strip(",")
+    parts = [p.strip() for p in re.split(r",| at | @ ", s, maxsplit=1) if p.strip()]
+
+    if len(parts) < 2:
+        # Can't reliably split - need LLM
+        return None
+
+    prog_raw, uni_raw = parts[0], parts[1]
+
+    # Normalize program
+    prog = _post_normalize_program(prog_raw)
+
+    # Normalize university
+    uni = _post_normalize_university(uni_raw)
+
+    # If university normalized successfully (not "Unknown" and found in canon or fuzzy matched)
+    # and program looks valid, we can skip LLM
+    if uni != "Unknown" and prog:
+        return (prog, uni)
+
+    # If we got a good fuzzy match for university, trust it
+    if uni and uni in CANON_UNIS:
+        return (prog, uni)
+
+    # Otherwise, might need LLM for ambiguous cases
+    return None
+
+
+@lru_cache(maxsize=10000)
+def _call_llm_cached(program_text: str) -> Tuple[str, str]:
+    """Cached wrapper for LLM calls. Returns (program, university) tuple."""
     llm = _load_llm()
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -245,10 +298,33 @@ def _call_llm(program_text: str) -> Dict[str, str]:
 
     std_prog = _post_normalize_program(std_prog)
     std_uni = _post_normalize_university(std_uni)
+    return (std_prog, std_uni)
+
+
+def _call_llm(program_text: str) -> Dict[str, str]:
+    """Query the tiny LLM and return standardized fields (with caching)."""
+    std_prog, std_uni = _call_llm_cached(program_text)
     return {
         "standardized_program": std_prog,
         "standardized_university": std_uni,
     }
+
+
+def _standardize_fast(program_text: str) -> Dict[str, str]:
+    """
+    Fast standardization: try rules first, fall back to cached LLM.
+    This is the main entry point for processing.
+    """
+    # Try rule-based parsing first (instant)
+    result = _try_rule_based_parse(program_text)
+    if result is not None:
+        return {
+            "standardized_program": result[0],
+            "standardized_university": result[1],
+        }
+
+    # Fall back to cached LLM call
+    return _call_llm(program_text)
 
 
 def _normalize_input(payload: Any) -> List[Dict[str, Any]]:
@@ -275,7 +351,7 @@ def standardize() -> Any:
     out: List[Dict[str, Any]] = []
     for row in rows:
         program_text = (row or {}).get("program") or ""
-        result = _call_llm(program_text)
+        result = _standardize_fast(program_text)
         row["llm-generated-program"] = result["standardized_program"]
         row["llm-generated-university"] = result["standardized_university"]
         out.append(row)
@@ -283,34 +359,77 @@ def standardize() -> Any:
     return jsonify({"rows": out})
 
 
+def _process_single_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    """Process a single row with fast standardization."""
+    program_text = (row or {}).get("program") or ""
+    result = _standardize_fast(program_text)
+    row["llm-generated-program"] = result["standardized_program"]
+    row["llm-generated-university"] = result["standardized_university"]
+    return row
+
+
 def _cli_process_file(
     in_path: str,
     out_path: str | None,
     append: bool,
     to_stdout: bool,
+    parallel: bool = True,
 ) -> None:
-    """Process a JSON file and write JSONL incrementally."""
+    """Process a JSON file with optional parallel processing."""
     with open(in_path, "r", encoding="utf-8") as f:
         rows = _normalize_input(json.load(f))
 
+    total = len(rows)
+    print(f"Processing {total} rows...", file=sys.stderr)
+
+    # First pass: separate into rule-parseable vs LLM-needed
+    rule_parsed: List[Tuple[int, Dict[str, Any]]] = []
+    llm_needed: List[Tuple[int, Dict[str, Any]]] = []
+
+    for idx, row in enumerate(rows):
+        program_text = (row or {}).get("program") or ""
+        result = _try_rule_based_parse(program_text)
+        if result is not None:
+            row["llm-generated-program"] = result[0]
+            row["llm-generated-university"] = result[1]
+            rule_parsed.append((idx, row))
+        else:
+            llm_needed.append((idx, row))
+
+    print(
+        f"  Rule-parsed: {len(rule_parsed)} | LLM-needed: {len(llm_needed)}",
+        file=sys.stderr,
+    )
+
+    # Process LLM-needed rows sequentially (LLM isn't thread-safe)
+    # Pre-load the model once before processing
+    processed_llm: List[Tuple[int, Dict[str, Any]]] = []
+    if llm_needed:
+        print("  Loading LLM model...", file=sys.stderr)
+        _load_llm()  # Pre-load to avoid issues
+        print("  Processing LLM rows...", file=sys.stderr)
+        for idx, row in llm_needed:
+            processed_llm.append((idx, _process_single_row(row)))
+
+    # Merge and sort by original index
+    all_processed = sorted(rule_parsed + processed_llm, key=lambda x: x[0])
+
+    # Write output as JSON array
     sink = sys.stdout if to_stdout else None
     if not to_stdout:
-        out_path = out_path or (in_path + ".jsonl")
+        out_path = out_path or in_path.replace(".json", "_llm.json")
         mode = "a" if append else "w"
         sink = open(out_path, mode, encoding="utf-8")
 
-    assert sink is not None  # for type-checkers
+    assert sink is not None
 
     try:
-        for row in rows:
-            program_text = (row or {}).get("program") or ""
-            result = _call_llm(program_text)
-            row["llm-generated-program"] = result["standardized_program"]
-            row["llm-generated-university"] = result["standardized_university"]
-
-            json.dump(row, sink, ensure_ascii=False)
-            sink.write("\n")
-            sink.flush()
+        # Extract just the rows (without indices) and write as JSON array
+        rows_out = [row for _, row in all_processed]
+        json.dump(rows_out, sink, ensure_ascii=False, indent=2)
+        sink.write("\n")
+        sink.flush()
+        print(f"Done! Processed {total} rows.", file=sys.stderr)
     finally:
         if sink is not sys.stdout:
             sink.close()
