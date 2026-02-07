@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grad Cafe Analysis | Module 3</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="logo">📊 Grad Cafe Analysis</h1>
+            <div class="header-actions">
+                <button id="update-btn" class="btn btn-secondary" onclick="updateAnalysis()">
+                    <span class="btn-icon">🔄</span>
+                    Update Analysis
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Status Banner -->
+    <div id="status-banner" class="status-banner hidden">
+        <span id="status-message"></span>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Pull Data Section -->
+        <section class="action-card">
+            <div class="action-header">
+                <h2>🌐 Data Management</h2>
+            </div>
+            <div class="action-body">
+                <p class="action-description">
+                    Click the button below to scrape the latest admission results from
+                    <strong>The Grad Cafe</strong>. This will fetch new entries and add them
+                    to your database for analysis.
+                </p>
+                <button id="pull-data-btn" class="btn btn-primary btn-large" onclick="pullData()">
+                    <span class="btn-icon">⬇️</span>
+                    Pull Data
+                </button>
+                <p class="action-note">
+                    <em>Note: This process may take several minutes depending on the amount of new data.</em>
+                </p>
+            </div>
+        </section>
+
+        {% if error %}
+        <section class="error-card">
+            <h2>⚠️ Database Error</h2>
+            <p>{{ error }}</p>
+            <p>Please make sure PostgreSQL is running and the database is set up correctly.</p>
+        </section>
+        {% else %}
+
+        <!-- Analysis Results -->
+        <section class="results-section">
+            <h2 class="section-title">📈 Analysis Results</h2>
+
+            <div class="results-grid">
+                <!-- Q1: Fall 2026 Count -->
+                <div class="result-card">
+                    <div class="card-number">Q1</div>
+                    <h3>Fall 2026 Entries</h3>
+                    <p class="result-question">How many entries have applied for Fall 2026?</p>
+                    <div class="result-value">{{ results.q1 | default(0) }}</div>
+                    <p class="result-unit">applications</p>
+                </div>
+
+                <!-- Q2: International Percentage -->
+                <div class="result-card">
+                    <div class="card-number">Q2</div>
+                    <h3>International Students</h3>
+                    <p class="result-question">What percentage are international students?</p>
+                    <div class="result-value">{{ results.q2 | default(0) }}%</div>
+                    <p class="result-unit">of all entries</p>
+                </div>
+
+                <!-- Q3: Average Scores -->
+                <div class="result-card card-wide">
+                    <div class="card-number">Q3</div>
+                    <h3>Average Test Scores</h3>
+                    <p class="result-question">What are the average GPA, GRE, GRE V, GRE AW?</p>
+                    <div class="scores-grid">
+                        <div class="score-item">
+                            <span class="score-label">GPA</span>
+                            <span class="score-value">{{ results.q3.avg_gpa | default('N/A') }}</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">GRE</span>
+                            <span class="score-value">{{ results.q3.avg_gre | default('N/A') }}</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">GRE V</span>
+                            <span class="score-value">{{ results.q3.avg_gre_v | default('N/A') }}</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">GRE AW</span>
+                            <span class="score-value">{{ results.q3.avg_gre_aw | default('N/A') }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q4: American GPA Fall 2026 -->
+                <div class="result-card">
+                    <div class="card-number">Q4</div>
+                    <h3>American Students GPA</h3>
+                    <p class="result-question">Average GPA of Americans in Fall 2026?</p>
+                    <div class="result-value">{{ results.q4 | default('N/A') }}</div>
+                    <p class="result-unit">average GPA</p>
+                </div>
+
+                <!-- Q5: Fall 2025 Acceptance Rate -->
+                <div class="result-card">
+                    <div class="card-number">Q5</div>
+                    <h3>Fall 2025 Acceptances</h3>
+                    <p class="result-question">What percent of Fall 2025 are acceptances?</p>
+                    <div class="result-value">{{ results.q5 | default(0) }}%</div>
+                    <p class="result-unit">acceptance rate</p>
+                </div>
+
+                <!-- Q6: Fall 2026 Accepted GPA -->
+                <div class="result-card">
+                    <div class="card-number">Q6</div>
+                    <h3>Accepted Students GPA</h3>
+                    <p class="result-question">Average GPA of Fall 2026 acceptances?</p>
+                    <div class="result-value">{{ results.q6 | default('N/A') }}</div>
+                    <p class="result-unit">average GPA</p>
+                </div>
+
+                <!-- Q7: JHU Masters CS -->
+                <div class="result-card">
+                    <div class="card-number">Q7</div>
+                    <h3>JHU Masters CS</h3>
+                    <p class="result-question">Entries for JHU Masters in Computer Science?</p>
+                    <div class="result-value">{{ results.q7 | default(0) }}</div>
+                    <p class="result-unit">applications</p>
+                </div>
+
+                <!-- Q8 & Q9: Elite PhD CS Comparison -->
+                <div class="result-card card-wide">
+                    <div class="card-number">Q8 & Q9</div>
+                    <h3>Elite PhD CS Acceptances (2026)</h3>
+                    <p class="result-question">PhD CS acceptances from Georgetown, MIT, Stanford, or CMU?</p>
+                    <div class="comparison-grid">
+                        <div class="comparison-item">
+                            <span class="comparison-label">Downloaded Fields</span>
+                            <span class="comparison-value">{{ results.q8 | default(0) }}</span>
+                        </div>
+                        <div class="comparison-item">
+                            <span class="comparison-label">LLM Fields</span>
+                            <span class="comparison-value">{{ results.q9 | default(0) }}</span>
+                        </div>
+                    </div>
+                    {% if results.q8 != results.q9 %}
+                    <p class="comparison-note warning">⚠️ Results differ between field types!</p>
+                    {% else %}
+                    <p class="comparison-note success">✓ Results are consistent</p>
+                    {% endif %}
+                </div>
+
+                <!-- Q10: Top Universities -->
+                <div class="result-card card-full">
+                    <div class="card-number">Q10</div>
+                    <h3>Top Universities by Acceptance Rate</h3>
+                    <p class="result-question">Universities with highest acceptance rates (min 20 applications)</p>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>University</th>
+                                    <th>Total Apps</th>
+                                    <th>Accepted</th>
+                                    <th>Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in results.q10 %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ row[0] }}</td>
+                                    <td>{{ row[1] }}</td>
+                                    <td>{{ row[2] }}</td>
+                                    <td>{{ row[3] }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Q11: Stats by Degree -->
+                <div class="result-card card-full">
+                    <div class="card-number">Q11</div>
+                    <h3>Statistics by Degree Type</h3>
+                    <p class="result-question">Average GPA and acceptance rate by degree type</p>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Degree</th>
+                                    <th>Total Apps</th>
+                                    <th>Avg GPA</th>
+                                    <th>Acceptance Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in results.q11 %}
+                                <tr>
+                                    <td>{{ row[0] }}</td>
+                                    <td>{{ row[1] }}</td>
+                                    <td>{{ row[2] | default('N/A') }}</td>
+                                    <td>{{ row[3] }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>Module 3 - Database Queries Assignment | JHU Software Concepts</p>
+    </footer>
+
+    <script>
+        // Check scraping status on page load
+        checkScrapingStatus();
+
+        // Poll for status updates every 5 seconds if scraping is running
+        let statusInterval = null;
+
+        function checkScrapingStatus() {
+            fetch('/api/scrape-status')
+                .then(response => response.json())
+                .then(data => {
+                    updateUIState(data.is_running, data.message);
+
+                    if (data.is_running && !statusInterval) {
+                        statusInterval = setInterval(checkScrapingStatus, 5000);
+                    } else if (!data.is_running && statusInterval) {
+                        clearInterval(statusInterval);
+                        statusInterval = null;
+                    }
+                });
+        }
+
+        function updateUIState(isRunning, message) {
+            const pullBtn = document.getElementById('pull-data-btn');
+            const updateBtn = document.getElementById('update-btn');
+            const statusBanner = document.getElementById('status-banner');
+            const statusMessage = document.getElementById('status-message');
+
+            if (isRunning) {
+                pullBtn.disabled = true;
+                pullBtn.innerHTML = '<span class="btn-icon">⏳</span> Scraping in Progress...';
+                pullBtn.classList.add('btn-disabled');
+
+                updateBtn.disabled = true;
+                updateBtn.classList.add('btn-disabled');
+
+                statusBanner.classList.remove('hidden');
+                statusBanner.classList.add('info');
+                statusMessage.textContent = message || 'Data scraping in progress...';
+            } else {
+                pullBtn.disabled = false;
+                pullBtn.innerHTML = '<span class="btn-icon">⬇️</span> Pull Data';
+                pullBtn.classList.remove('btn-disabled');
+
+                updateBtn.disabled = false;
+                updateBtn.classList.remove('btn-disabled');
+
+                if (message && message !== '') {
+                    statusBanner.classList.remove('hidden');
+                    if (message.includes('success')) {
+                        statusBanner.classList.add('success');
+                        statusBanner.classList.remove('info', 'error');
+                    } else if (message.includes('failed') || message.includes('Error')) {
+                        statusBanner.classList.add('error');
+                        statusBanner.classList.remove('info', 'success');
+                    }
+                    statusMessage.textContent = message;
+                }
+            }
+        }
+
+        function pullData() {
+            const pullBtn = document.getElementById('pull-data-btn');
+            pullBtn.disabled = true;
+            pullBtn.innerHTML = '<span class="btn-icon">⏳</span> Starting...';
+
+            fetch('/api/pull-data', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateUIState(true, data.message);
+                        statusInterval = setInterval(checkScrapingStatus, 5000);
+                    } else {
+                        updateUIState(false, data.message);
+                    }
+                })
+                .catch(error => {
+                    updateUIState(false, 'Error: ' + error.message);
+                });
+        }
+
+        function updateAnalysis() {
+            fetch('/api/update-analysis', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload the page to get fresh data
+                        window.location.reload();
+                    } else {
+                        const statusBanner = document.getElementById('status-banner');
+                        const statusMessage = document.getElementById('status-message');
+                        statusBanner.classList.remove('hidden');
+                        statusBanner.classList.add('warning');
+                        statusMessage.textContent = data.message;
+                    }
+                });
+        }
+    </script>
+</body>
+
+</html>
