@@ -87,18 +87,15 @@ def clean_data(raw_data):
         gpa = entry.get('GPA', '')
         cleaned_entry['GPA'] = gpa if gpa else ''
         
-        # GRE scores - keep as strings for JSON compatibility
+        # GRE scores - use empty string for missing values (consistent format)
         gre = entry.get('GRE', '')
-        if gre:
-            cleaned_entry['GRE'] = gre
+        cleaned_entry['GRE'] = gre if gre else ''
             
         gre_v = entry.get('GRE_V', '')
-        if gre_v:
-            cleaned_entry['GRE_V'] = gre_v
+        cleaned_entry['GRE_V'] = gre_v if gre_v else ''
             
         gre_aw = entry.get('GRE_AW', '')
-        if gre_aw:
-            cleaned_entry['GRE_AW'] = gre_aw
+        cleaned_entry['GRE_AW'] = gre_aw if gre_aw else ''
         
         cleaned.append(cleaned_entry)
         
