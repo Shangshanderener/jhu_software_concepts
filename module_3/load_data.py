@@ -8,6 +8,7 @@ for analysis.
 
 import json
 import re
+import sys
 import psycopg
 from datetime import datetime
 
@@ -195,9 +196,10 @@ def load_data(cur, data):
 
 def main():
     """Main function to load data into PostgreSQL."""
+    data_file = sys.argv[1] if len(sys.argv) >= 2 else DATA_FILE
     # Load JSON data
-    print(f"Loading data from {DATA_FILE}...")
-    with open(DATA_FILE, 'r', encoding='utf-8') as f:
+    print(f"Loading data from {data_file}...")
+    with open(data_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
     print(f"Loaded {len(data)} entries from JSON")
     

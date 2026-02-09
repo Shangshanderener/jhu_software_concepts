@@ -58,11 +58,11 @@ def pull_data():
     # Run scraping in background thread
     def run_scrape():
         try:
-            # Path to the scrape script
-            scrape_script = os.path.join(os.path.dirname(__file__), 
-                                         '..', 'module_2', 'scrape.py')
-            output_file = os.path.join(os.path.dirname(__file__), 
-                                       '..', 'module_2', 'applicant_data.json')
+            # Path to the scrape script (module_2 inside module_3)
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            module_2_dir = os.path.join(base_dir, 'module_2')
+            scrape_script = os.path.join(module_2_dir, 'scrape.py')
+            output_file = os.path.join(module_2_dir, 'applicant_data.json')
             
             # Run scrape with limited pages for demo (adjust as needed)
             result = subprocess.run(
@@ -74,28 +74,41 @@ def pull_data():
             
             if result.returncode == 0:
                 # Now run clean.py
-                clean_script = os.path.join(os.path.dirname(__file__), 
-                                           '..', 'module_2', 'clean.py')
-                cleaned_file = os.path.join(os.path.dirname(__file__), 
-                                           '..', 'module_2', 'cleaned_applicant_data.json')
+                clean_script = os.path.join(module_2_dir, 'clean.py')
+                cleaned_file = os.path.join(module_2_dir, 'cleaned_applicant_data.json')
                 
-                subprocess.run(
+                clean_result = subprocess.run(
                     ['python3', clean_script, '--input', output_file, '--output', cleaned_file],
                     capture_output=True,
                     text=True,
                     timeout=300
                 )
-                
-                # Load new data into database
-                load_script = os.path.join(os.path.dirname(__file__), 'load_data.py')
-                subprocess.run(
-                    ['python3', load_script],
-                    capture_output=True,
-                    text=True,
-                    timeout=300
-                )
-                
-                scraping_state['message'] = 'Data scraping completed successfully!'
+                if clean_result.returncode != 0:
+                    scraping_state['message'] = f'Cleaning failed: {clean_result.stderr}'
+                else:
+                    # LLM standardization (program/university names)
+                    llm_hosting_dir = os.path.join(module_2_dir, 'llm_hosting')
+                    llm_script = os.path.join(llm_hosting_dir, 'app.py')
+                    llm_output_file = os.path.join(module_2_dir, 'llm_extend_applicant_data.json')
+                    llm_result = subprocess.run(
+                        ['python3', llm_script, '--file', cleaned_file, '--out', llm_output_file],
+                        cwd=llm_hosting_dir,
+                        capture_output=True,
+                        text=True,
+                        timeout=600  # LLM can take a while
+                    )
+                    if llm_result.returncode != 0:
+                        scraping_state['message'] = f'LLM standardization failed: {llm_result.stderr}'
+                    else:
+                        # Load new data into database
+                        load_script = os.path.join(base_dir, 'load_data.py')
+                        subprocess.run(
+                            ['python3', load_script, llm_output_file],
+                            capture_output=True,
+                            text=True,
+                            timeout=300
+                        )
+                        scraping_state['message'] = 'Data scraping completed successfully!'
             else:
                 scraping_state['message'] = f'Scraping failed: {result.stderr}'
                 
