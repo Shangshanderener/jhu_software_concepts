@@ -87,7 +87,7 @@ def pull_data():
                 )
                 
                 # Load new data into database
-                load_script = os.path.join(os.path.dirname(__file__), 'load_to_postgres.py')
+                load_script = os.path.join(os.path.dirname(__file__), 'load_data.py')
                 subprocess.run(
                     ['python3', load_script],
                     capture_output=True,
