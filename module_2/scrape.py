@@ -195,9 +195,14 @@ def _parse_entry(rows):
             badges = _extract_badges(row)
             entry.update(badges)
                 
-    # Ensure comments field exists
+    # Ensure comments field exists with consistent empty string for missing data
     if 'comments' not in entry:
         entry['comments'] = ''
+
+    # Ensure GRE fields exist with consistent empty string for missing data
+    for field in ['GRE', 'GRE_V', 'GRE_AW']:
+        if field not in entry:
+            entry[field] = ''
         
     return entry
 

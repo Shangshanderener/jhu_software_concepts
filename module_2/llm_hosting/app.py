@@ -146,14 +146,49 @@ def _load_llm() -> Llama:
     return _LLM
 
 
-def _split_fallback(text: str) -> Tuple[str, str]:
-    """Simple, rules-first parser if the model returns non-JSON."""
-    s = re.sub(r"\s+", " ", (text or "")).strip().strip(",")
-    parts = [p.strip() for p in re.split(r",| at | @ ", s) if p.strip()]
-    prog = parts[0] if parts else ""
-    uni = parts[1] if len(parts) > 1 else ""
+# Precompiled pattern for university-keyword detection
+_UNI_KW_RE = re.compile(
+    r"(?i)\b(university|college|institute|school|polytechnic|academy|conservatory|seminary)"
+    r"|(\b(?:MIT|UCLA|USC|NYU|CUNY|SUNY|UCSF|UCSD|UCI|UCR|UCD|UCSB|UCSC|UCB|UBC|EPFL|ETH|Caltech|Emory|Purdue|Rutgers|Drexel|Brandeis|Tufts|Vanderbilt|Georgetown|Stanford|Harvard|Yale|Princeton|Columbia|Cornell|Dartmouth|Brown|Rice|Duke|Oxford|Cambridge)\b)"
+)
 
-    # High-signal expansions
+
+def _smart_split(text: str) -> Tuple[str, str]:
+    """
+    Split a combined 'program, university' string by scanning from the RIGHT
+    to find the university portion. Handles multi-comma program names like
+    'Criminology, Law and Society, Temple University' correctly.
+    """
+    s = re.sub(r"\s+", " ", (text or "")).strip().strip(",")
+
+    # Split on commas and scan from the right
+    parts = [p.strip() for p in s.split(",") if p.strip()]
+    if len(parts) <= 1:
+        # No comma — try the whole thing as program
+        return s, ""
+
+    # Scan from right: try building the university from 1, 2, ... rightmost parts
+    for i in range(len(parts) - 1, 0, -1):
+        candidate_uni = ", ".join(parts[i:])
+        # Check against canon list first (exact then fuzzy with high cutoff)
+        if candidate_uni in CANON_UNIS:
+            return ", ".join(parts[:i]), candidate_uni
+        canon_match = _best_match(candidate_uni, CANON_UNIS, cutoff=0.88)
+        if canon_match:
+            return ", ".join(parts[:i]), canon_match
+        # Check for university keywords
+        if _UNI_KW_RE.search(candidate_uni):
+            return ", ".join(parts[:i]), candidate_uni
+
+    # Fallback: first part = program, rest = university
+    return parts[0], ", ".join(parts[1:])
+
+
+def _split_fallback(text: str) -> Tuple[str, str]:
+    """Rules-based parser using right-scan splitting."""
+    prog, uni = _smart_split(text)
+
+    # High-signal abbreviation expansions
     if re.fullmatch(r"(?i)mcg(ill)?(\.)?", uni or ""):
         uni = "McGill University"
     if re.fullmatch(
@@ -171,7 +206,7 @@ def _split_fallback(text: str) -> Tuple[str, str]:
     return prog, uni
 
 
-def _best_match(name: str, candidates: List[str], cutoff: float = 0.86) -> str | None:
+def _best_match(name: str, candidates: List[str], cutoff: float = 0.80) -> str | None:
     """Fuzzy match via difflib (lightweight, Replit-friendly)."""
     if not name or not candidates:
         return None
@@ -183,10 +218,21 @@ def _post_normalize_program(prog: str) -> str:
     """Apply common fixes, title case, then canonical/fuzzy mapping."""
     p = (prog or "").strip()
     p = COMMON_PROG_FIXES.get(p, p)
+    # Strip trailing parenthetical abbreviations like "(OLPD)"
+    p = re.sub(r"\s*\([A-Z]{2,}\)\s*$", "", p)
+    # Strip leading "Department of" / "Dept. of"
+    p = re.sub(r"^(department|dept\.?)\s+of\s+", "", p, flags=re.IGNORECASE)
+    p = p.strip().strip(",").strip()
     p = p.title()
+    # Normalize common small words
+    for word in ["And", "Of", "In", "For", "The", "With", "To"]:
+        p = re.sub(rf"\b{word}\b", word.lower(), p)
+    # Capitalize first letter
+    if p:
+        p = p[0].upper() + p[1:]
     if p in CANON_PROGS:
         return p
-    match = _best_match(p, CANON_PROGS, cutoff=0.84)
+    match = _best_match(p, CANON_PROGS, cutoff=0.78)
     return match or p
 
 
@@ -203,14 +249,21 @@ def _post_normalize_university(uni: str) -> str:
     # Common spelling fixes
     u = COMMON_UNI_FIXES.get(u, u)
 
-    # Normalize 'Of' → 'of'
+    # Strip trailing parenthetical abbreviations like "(MIT)"
+    u = re.sub(r"\s*\([A-Z]{2,}\)\s*$", "", u).strip()
+
+    # Normalize capitalization: title case, then fix 'Of' → 'of'
     if u:
-        u = re.sub(r"\bOf\b", "of", u.title())
+        u = u.title()
+        for word in ["Of", "And", "In", "For", "The", "At", "De", "Du", "Des"]:
+            u = re.sub(rf"\b{word}\b", word.lower(), u)
+        # Capitalize first letter
+        u = u[0].upper() + u[1:]
 
     # Canonical or fuzzy map
     if u in CANON_UNIS:
         return u
-    match = _best_match(u, CANON_UNIS, cutoff=0.86)
+    match = _best_match(u, CANON_UNIS, cutoff=0.80)
     return match or u or "Unknown"
 
 # Cache for LLM results to avoid redundant calls
@@ -223,20 +276,18 @@ MAX_WORKERS = int(os.getenv("MAX_WORKERS", "4"))
 def _try_rule_based_parse(program_text: str) -> Tuple[str, str] | None:
     """
     Attempt to parse program/university using rules only.
+    Uses right-scan splitting to correctly handle multi-comma program names.
     Returns (program, university) if confident, else None to trigger LLM.
     """
     if not program_text or not program_text.strip():
         return ("Unknown", "Unknown")
 
-    # Parse using comma, "at", or "@" separators
-    s = re.sub(r"\s+", " ", program_text).strip().strip(",")
-    parts = [p.strip() for p in re.split(r",| at | @ ", s, maxsplit=1) if p.strip()]
+    # Use smart right-scan splitting
+    prog_raw, uni_raw = _smart_split(program_text)
 
-    if len(parts) < 2:
+    if not uni_raw:
         # Can't reliably split - need LLM
         return None
-
-    prog_raw, uni_raw = parts[0], parts[1]
 
     # Normalize program
     prog = _post_normalize_program(prog_raw)
