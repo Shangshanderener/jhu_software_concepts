@@ -17,9 +17,8 @@ class TestQueryDataConnection(unittest.TestCase):
     @patch.dict(os.environ, {}, clear=True)
     def test_get_connection_fallback(self, mock_connect):
         """Test get_connection falls back to individual params if DATABASE_URL is missing."""
-        # Ensure DATABASE_URL is not set
-        if 'DATABASE_URL' in os.environ:
-            del os.environ['DATABASE_URL']
+        # Ensure DATABASE_URL is not set (redundant check for safety)
+        os.environ.pop('DATABASE_URL', None)
             
         query_data.get_connection()
         

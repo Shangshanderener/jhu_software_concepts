@@ -75,7 +75,7 @@ def q2_international_percentage():
         FROM applicants;
     """
     result = execute_query(query)
-    return result[0][0] if result else 0
+    return result[0][0] if result and result[0][0] is not None else 0.0
 
 
 # ============================================================================
@@ -130,7 +130,7 @@ def q4_american_fall_2026_gpa():
           AND gpa IS NOT NULL;
     """
     result = execute_query(query)
-    return result[0][0] if result else None
+    return result[0][0] if result and result[0][0] is not None else None
 
 
 # ============================================================================
@@ -153,7 +153,7 @@ def q5_fall_2025_acceptance_rate():
         WHERE term ILIKE '%Fall 2025%';
     """
     result = execute_query(query)
-    return result[0][0] if result else 0
+    return result[0][0] if result and result[0][0] is not None else 0.0
 
 
 # ============================================================================
@@ -175,7 +175,7 @@ def q6_fall_2026_accepted_gpa():
           AND gpa IS NOT NULL;
     """
     result = execute_query(query)
-    return result[0][0] if result else None
+    return result[0][0] if result and result[0][0] is not None else None
 
 
 # ============================================================================
