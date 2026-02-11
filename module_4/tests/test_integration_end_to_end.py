@@ -61,7 +61,16 @@ def test_e2e_pull_update_render(client):
 
     resp_pull = c.post('/api/pull-data')
     assert resp_pull.status_code == 200
-    time.sleep(0.4)
+    
+    # Poll for scraping completion
+    max_retries = 20
+    for _ in range(max_retries):
+        time.sleep(0.5)
+        status = c.get('/api/scrape-status').get_json()
+        if not status['is_running']:
+            break
+    else:
+        pytest.fail("Scraping did not complete in time")
 
     resp_update = c.post('/api/update-analysis')
     assert resp_update.status_code == 200
@@ -69,6 +78,13 @@ def test_e2e_pull_update_render(client):
     resp_page = c.get('/analysis')
     assert resp_page.status_code == 200
     text = resp_page.get_data(as_text=True)
+    
+    # Debug output if assertion fails
+    if 'Answer:' not in text:
+        print("\n=== PAGE CONTENT DEBUG ===")
+        print(text)
+        print("==========================\n")
+        
     assert 'Answer:' in text
     assert 'Analysis' in text
     # Percentages with two decimals
