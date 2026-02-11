@@ -1,0 +1,219 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grad Cafe Analytics &mdash; Module 4 - Testing and Documentation Experiment Assignment 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="scrape" href="modules/scrape.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            Module 4 - Testing and Documentation Experiment Assignment
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="modules/scrape.html">scrape</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/clean.html">clean</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/load_data.html">load_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/query_data.html">query_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules/flask_app.html">flask_app</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Module 4 - Testing and Documentation Experiment Assignment</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Grad Cafe Analytics</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="grad-cafe-analytics">
+<h1>Grad Cafe Analytics<a class="headerlink" href="#grad-cafe-analytics" title="Link to this heading"></a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>Grad Cafe Analytics is a web application that scrapes admission data from The Grad Cafe,
+cleans and standardizes it, loads it into PostgreSQL, and presents analysis results.</p>
+</section>
+<section id="setup">
+<h2>Setup<a class="headerlink" href="#setup" title="Link to this heading"></a></h2>
+<p>Requirements: Python 3.11+, PostgreSQL</p>
+<p>Install dependencies:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</pre></div>
+</div>
+<p>Environment variables:</p>
+<ul class="simple">
+<li><p><strong>DATABASE_URL</strong>: PostgreSQL connection string (e.g. <code class="docutils literal notranslate"><span class="pre">postgresql://user:pass&#64;host:5432/gradcafe</span></code>)</p></li>
+<li><p>Fallback: <code class="docutils literal notranslate"><span class="pre">DB_NAME</span></code>, <code class="docutils literal notranslate"><span class="pre">DB_USER</span></code>, <code class="docutils literal notranslate"><span class="pre">DB_PASSWORD</span></code>, <code class="docutils literal notranslate"><span class="pre">DB_HOST</span></code>, <code class="docutils literal notranslate"><span class="pre">DB_PORT</span></code></p></li>
+</ul>
+<p>Run the application:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span>postgresql://...
+python<span class="w"> </span>-m<span class="w"> </span>src.flask_app
+</pre></div>
+</div>
+</section>
+<section id="how-to-run-tests">
+<h2>How to Run Tests<a class="headerlink" href="#how-to-run-tests" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>module_4
+<span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span>postgresql://...
+pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;web or buttons or analysis or db or integration&quot;</span>
+</pre></div>
+</div>
+<p>With coverage (100% required):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;web or buttons or analysis or db or integration&quot;</span><span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing<span class="w"> </span>--cov-fail-under<span class="o">=</span><span class="m">100</span>
+</pre></div>
+</div>
+<p>Pytest markers: <code class="docutils literal notranslate"><span class="pre">web</span></code>, <code class="docutils literal notranslate"><span class="pre">buttons</span></code>, <code class="docutils literal notranslate"><span class="pre">analysis</span></code>, <code class="docutils literal notranslate"><span class="pre">db</span></code>, <code class="docutils literal notranslate"><span class="pre">integration</span></code>.</p>
+</section>
+<section id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Web (Flask)</strong>: Serves the Analysis page with “Pull Data” and “Update Analysis” buttons.
+Routes: <code class="docutils literal notranslate"><span class="pre">/</span></code>, <code class="docutils literal notranslate"><span class="pre">/analysis</span></code>, <code class="docutils literal notranslate"><span class="pre">/api/pull-data</span></code>, <code class="docutils literal notranslate"><span class="pre">/api/update-analysis</span></code>, <code class="docutils literal notranslate"><span class="pre">/api/scrape-status</span></code>.</p></li>
+<li><p><strong>ETL</strong>: Scrape (module_2/scrape.py) → Clean (module_2/clean.py) → LLM standardize (module_2/llm_hosting) → Load (load_data.py).</p></li>
+<li><p><strong>DB</strong>: PostgreSQL with <code class="docutils literal notranslate"><span class="pre">applicants</span></code> table. Query module (query_data.py) provides analysis results.</p></li>
+</ul>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules/scrape.html">scrape</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/scrape.html#src.module_2.scrape.load_data"><code class="docutils literal notranslate"><span class="pre">load_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/scrape.html#src.module_2.scrape.save_data"><code class="docutils literal notranslate"><span class="pre">save_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/scrape.html#src.module_2.scrape.scrape_data"><code class="docutils literal notranslate"><span class="pre">scrape_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/clean.html">clean</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/clean.html#src.module_2.clean.clean_data"><code class="docutils literal notranslate"><span class="pre">clean_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/clean.html#src.module_2.clean.load_data"><code class="docutils literal notranslate"><span class="pre">load_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/clean.html#src.module_2.clean.save_data"><code class="docutils literal notranslate"><span class="pre">save_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/load_data.html">load_data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/load_data.html#src.load_data.create_table"><code class="docutils literal notranslate"><span class="pre">create_table()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/load_data.html#src.load_data.extract_program"><code class="docutils literal notranslate"><span class="pre">extract_program()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/load_data.html#src.load_data.extract_university"><code class="docutils literal notranslate"><span class="pre">extract_university()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/load_data.html#src.load_data.get_connection"><code class="docutils literal notranslate"><span class="pre">get_connection()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/load_data.html#src.load_data.get_is_american"><code class="docutils literal notranslate"><span class="pre">get_is_american()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/load_data.html#src.load_data.load_data"><code class="docutils literal notranslate"><span class="pre">load_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/load_data.html#src.load_data.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/load_data.html#src.load_data.parse_date"><code class="docutils literal notranslate"><span class="pre">parse_date()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/load_data.html#src.load_data.parse_decision"><code class="docutils literal notranslate"><span class="pre">parse_decision()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/load_data.html#src.load_data.parse_decision_date"><code class="docutils literal notranslate"><span class="pre">parse_decision_date()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/load_data.html#src.load_data.parse_float"><code class="docutils literal notranslate"><span class="pre">parse_float()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/query_data.html">query_data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.execute_query"><code class="docutils literal notranslate"><span class="pre">execute_query()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.get_all_results"><code class="docutils literal notranslate"><span class="pre">get_all_results()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.get_connection"><code class="docutils literal notranslate"><span class="pre">get_connection()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.q10_top_universities_by_acceptance_rate"><code class="docutils literal notranslate"><span class="pre">q10_top_universities_by_acceptance_rate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.q11_stats_by_degree_type"><code class="docutils literal notranslate"><span class="pre">q11_stats_by_degree_type()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.q1_fall_2026_count"><code class="docutils literal notranslate"><span class="pre">q1_fall_2026_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.q2_international_percentage"><code class="docutils literal notranslate"><span class="pre">q2_international_percentage()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.q3_average_scores"><code class="docutils literal notranslate"><span class="pre">q3_average_scores()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.q4_american_fall_2026_gpa"><code class="docutils literal notranslate"><span class="pre">q4_american_fall_2026_gpa()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.q5_fall_2025_acceptance_rate"><code class="docutils literal notranslate"><span class="pre">q5_fall_2025_acceptance_rate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.q6_fall_2026_accepted_gpa"><code class="docutils literal notranslate"><span class="pre">q6_fall_2026_accepted_gpa()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.q7_jhu_masters_cs_count"><code class="docutils literal notranslate"><span class="pre">q7_jhu_masters_cs_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.q8_elite_phd_cs_2026_accepts"><code class="docutils literal notranslate"><span class="pre">q8_elite_phd_cs_2026_accepts()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules/query_data.html#src.query_data.q9_elite_phd_cs_2026_llm_accepts"><code class="docutils literal notranslate"><span class="pre">q9_elite_phd_cs_2026_llm_accepts()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules/flask_app.html">flask_app</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules/flask_app.html#src.flask_app.create_app"><code class="docutils literal notranslate"><span class="pre">create_app()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="testing-guide">
+<h2>Testing Guide<a class="headerlink" href="#testing-guide" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Markers</strong>: All tests use one of <code class="docutils literal notranslate"><span class="pre">web</span></code>, <code class="docutils literal notranslate"><span class="pre">buttons</span></code>, <code class="docutils literal notranslate"><span class="pre">analysis</span></code>, <code class="docutils literal notranslate"><span class="pre">db</span></code>, <code class="docutils literal notranslate"><span class="pre">integration</span></code>.</p></li>
+<li><p><strong>Selectors</strong>: UI tests use <code class="docutils literal notranslate"><span class="pre">data-testid=&quot;pull-data-btn&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">data-testid=&quot;update-analysis-btn&quot;</span></code>.</p></li>
+<li><p><strong>Fixtures</strong>: <code class="docutils literal notranslate"><span class="pre">conftest.py</span></code> provides <code class="docutils literal notranslate"><span class="pre">app</span></code>, <code class="docutils literal notranslate"><span class="pre">client</span></code>, <code class="docutils literal notranslate"><span class="pre">fake_scraper_loader</span></code>, <code class="docutils literal notranslate"><span class="pre">app_with_fake_loader</span></code>.</p></li>
+<li><p><strong>DB tests</strong>: Require <code class="docutils literal notranslate"><span class="pre">DATABASE_URL</span></code>; use fake data and skip when not set.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules/scrape.html" class="btn btn-neutral float-right" title="scrape" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>src.load_data &#8212; Grad Cafe Analytics 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for src.load_data</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">load_data.py - Load Grad Cafe data into PostgreSQL database.</span>
+
+<span class="sd">This script loads the LLM-extended applicant data into a PostgreSQL database</span>
+<span class="sd">for analysis. Uses DATABASE_URL environment variable when set.</span>
+<span class="sd">Idempotent: duplicate URLs are skipped via ON CONFLICT DO NOTHING.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">psycopg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="c1"># Path to the LLM-extended data file (relative to script dir when used as script)</span>
+<span class="n">DATA_FILE</span> <span class="o">=</span> <span class="s1">&#39;module_2/llm_extend_applicant_data.json&#39;</span>
+
+
+<div class="viewcode-block" id="get_connection">
+<a class="viewcode-back" href="../../modules/load_data.html#src.load_data.get_connection">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_connection</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get DB connection using DATABASE_URL or fallback env vars.&quot;&quot;&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DATABASE_URL&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">url</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">psycopg</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">psycopg</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+        <span class="n">dbname</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DB_NAME&#39;</span><span class="p">,</span> <span class="s1">&#39;gradcafe&#39;</span><span class="p">),</span>
+        <span class="n">user</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DB_USER&#39;</span><span class="p">,</span> <span class="s1">&#39;postgres&#39;</span><span class="p">),</span>
+        <span class="n">password</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DB_PASSWORD&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+        <span class="n">host</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DB_HOST&#39;</span><span class="p">,</span> <span class="s1">&#39;localhost&#39;</span><span class="p">),</span>
+        <span class="n">port</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;DB_PORT&#39;</span><span class="p">,</span> <span class="s1">&#39;5432&#39;</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="parse_date">
+<a class="viewcode-back" href="../../modules/load_data.html#src.load_data.parse_date">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_date</span><span class="p">(</span><span class="n">date_str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse date string to datetime object.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">date_str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Format: &quot;January 30, 2026&quot;</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">date_str</span><span class="p">,</span> <span class="s2">&quot;%B </span><span class="si">%d</span><span class="s2">, %Y&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="parse_float">
+<a class="viewcode-back" href="../../modules/load_data.html#src.load_data.parse_float">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_float</span><span class="p">(</span><span class="n">value_str</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract float value from string like &#39;GPA 3.9&#39; or &#39;GRE V 159&#39;.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">value_str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="c1"># Remove prefix and extract number</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;[\d.]+&#39;</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">value_str</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="parse_decision">
+<a class="viewcode-back" href="../../modules/load_data.html#src.load_data.parse_decision">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_decision</span><span class="p">(</span><span class="n">status_str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract decision type from status string like &#39;Accepted on 29 Jan&#39;.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">status_str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">status_lower</span> <span class="o">=</span> <span class="n">status_str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s1">&#39;accepted&#39;</span> <span class="ow">in</span> <span class="n">status_lower</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;Accepted&#39;</span>
+    <span class="k">elif</span> <span class="s1">&#39;rejected&#39;</span> <span class="ow">in</span> <span class="n">status_lower</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;Rejected&#39;</span>
+    <span class="k">elif</span> <span class="s1">&#39;interview&#39;</span> <span class="ow">in</span> <span class="n">status_lower</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;Interview&#39;</span>
+    <span class="k">elif</span> <span class="s1">&#39;wait&#39;</span> <span class="ow">in</span> <span class="n">status_lower</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;Waitlisted&#39;</span>
+    <span class="k">return</span> <span class="n">status_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">status_str</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="parse_decision_date">
+<a class="viewcode-back" href="../../modules/load_data.html#src.load_data.parse_decision_date">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_decision_date</span><span class="p">(</span><span class="n">status_str</span><span class="p">,</span> <span class="n">term_str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract decision date from status string.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">status_str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="c1"># Pattern like &quot;Accepted on 29 Jan&quot;</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;on (\d{1,2}) (\w+)&#39;</span><span class="p">,</span> <span class="n">status_str</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+        <span class="n">day</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">month</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># Try to get year from term</span>
+        <span class="n">year</span> <span class="o">=</span> <span class="mi">2026</span>  <span class="c1"># default</span>
+        <span class="k">if</span> <span class="n">term_str</span><span class="p">:</span>
+            <span class="n">year_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="n">term_str</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">year_match</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">year</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">year_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Try parsing with different month formats</span>
+            <span class="k">for</span> <span class="n">fmt</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> %b %Y&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> %B %Y&#39;</span><span class="p">]:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">day</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">month</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fmt</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">continue</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="extract_university">
+<a class="viewcode-back" href="../../modules/load_data.html#src.load_data.extract_university">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_university</span><span class="p">(</span><span class="n">program_str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract university name from program string like &#39;Computer Science, MIT&#39;.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">program_str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="n">program_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>  <span class="c1"># Everything after first comma</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="extract_program">
+<a class="viewcode-back" href="../../modules/load_data.html#src.load_data.extract_program">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_program</span><span class="p">(</span><span class="n">program_str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract program name from program string like &#39;Computer Science, MIT&#39;.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">program_str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="n">program_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="get_is_american">
+<a class="viewcode-back" href="../../modules/load_data.html#src.load_data.get_is_american">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_is_american</span><span class="p">(</span><span class="n">us_int_str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert US/International field to is_american text.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">us_int_str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;Other&#39;</span>
+    <span class="k">if</span> <span class="n">us_int_str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;american&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;American&#39;</span>
+    <span class="k">elif</span> <span class="n">us_int_str</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;international&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;International&#39;</span>
+    <span class="k">return</span> <span class="s1">&#39;Other&#39;</span></div>
+
+
+
+<div class="viewcode-block" id="create_table">
+<a class="viewcode-back" href="../../modules/load_data.html#src.load_data.create_table">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_table</span><span class="p">(</span><span class="n">cur</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create the applicants table if it doesn&#39;t exist. url has UNIQUE for idempotency.&quot;&quot;&quot;</span>
+    <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        CREATE TABLE IF NOT EXISTS applicants (</span>
+<span class="s2">            p_id SERIAL PRIMARY KEY,</span>
+<span class="s2">            program TEXT,</span>
+<span class="s2">            comments TEXT,</span>
+<span class="s2">            date_added DATE,</span>
+<span class="s2">            url TEXT UNIQUE,</span>
+<span class="s2">            status TEXT,</span>
+<span class="s2">            term TEXT,</span>
+<span class="s2">            us_or_international TEXT,</span>
+<span class="s2">            gpa FLOAT,</span>
+<span class="s2">            gre FLOAT,</span>
+<span class="s2">            gre_v FLOAT,</span>
+<span class="s2">            gre_aw FLOAT,</span>
+<span class="s2">            degree TEXT,</span>
+<span class="s2">            llm_generated_program TEXT,</span>
+<span class="s2">            llm_generated_university TEXT</span>
+<span class="s2">        );</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="load_data">
+<a class="viewcode-back" href="../../modules/load_data.html#src.load_data.load_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">(</span><span class="n">cur</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load data into the applicants table. Skips duplicates by url (idempotent).&quot;&quot;&quot;</span>
+    <span class="n">insert_query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        INSERT INTO applicants (</span>
+<span class="s2">            program, comments, date_added, url, status, term,</span>
+<span class="s2">            us_or_international, gpa, gre, gre_v, gre_aw, degree,</span>
+<span class="s2">            llm_generated_program, llm_generated_university</span>
+<span class="s2">        ) VALUES (</span>
+<span class="s2">            </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span>
+<span class="s2">        )</span>
+<span class="s2">        ON CONFLICT (url) DO NOTHING</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="c1"># Parse fields - using correct JSON field names from module_2 scraping</span>
+        <span class="n">program</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;program&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">comments</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;comments&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">date_added</span> <span class="o">=</span> <span class="n">parse_date</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;date_added&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;url&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">term</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;term&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">us_or_international</span> <span class="o">=</span> <span class="n">get_is_american</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;US/International&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+        <span class="n">gpa</span> <span class="o">=</span> <span class="n">parse_float</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GPA&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+        <span class="n">gre</span> <span class="o">=</span> <span class="n">parse_float</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GRE&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+        <span class="n">gre_v</span> <span class="o">=</span> <span class="n">parse_float</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GRE_V&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+        <span class="n">gre_aw</span> <span class="o">=</span> <span class="n">parse_float</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GRE_AW&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+        <span class="n">degree</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Degree&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">llm_program</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;llm-generated-program&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">llm_uni</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;llm-generated-university&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        
+        <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">insert_query</span><span class="p">,</span> <span class="p">(</span>
+            <span class="n">program</span><span class="p">,</span> <span class="n">comments</span><span class="p">,</span> <span class="n">date_added</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span>
+            <span class="n">us_or_international</span><span class="p">,</span> <span class="n">gpa</span><span class="p">,</span> <span class="n">gre</span><span class="p">,</span> <span class="n">gre_v</span><span class="p">,</span> <span class="n">gre_aw</span><span class="p">,</span> <span class="n">degree</span><span class="p">,</span>
+            <span class="n">llm_program</span><span class="p">,</span> <span class="n">llm_uni</span>
+        <span class="p">))</span>
+        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="k">if</span> <span class="n">count</span> <span class="o">%</span> <span class="mi">1000</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> entries...&quot;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">count</span></div>
+
+
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../modules/load_data.html#src.load_data.main">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Main function to load data into PostgreSQL.&quot;&quot;&quot;</span>
+    <span class="n">data_file</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">DATA_FILE</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">data_file</span><span class="p">):</span>
+        <span class="n">data_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="n">data_file</span><span class="p">)</span>
+    <span class="c1"># Load JSON data</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading data from </span><span class="si">{</span><span class="n">data_file</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">data_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> entries from JSON&quot;</span><span class="p">)</span>
+    
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Connecting to PostgreSQL...&quot;</span><span class="p">)</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">conn</span> <span class="o">=</span> <span class="n">get_connection</span><span class="p">()</span>
+        
+        <span class="k">with</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cur</span><span class="p">:</span>
+            <span class="c1"># Create table</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating table...&quot;</span><span class="p">)</span>
+            <span class="n">create_table</span><span class="p">(</span><span class="n">cur</span><span class="p">)</span>
+            
+            <span class="c1"># Load data</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading data into database...&quot;</span><span class="p">)</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">(</span><span class="n">cur</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        
+        <span class="c1"># Commit</span>
+        <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Successfully loaded </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> entries into PostgreSQL!&quot;</span><span class="p">)</span>
+        
+    <span class="k">except</span> <span class="n">psycopg</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Database error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">conn</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+        <span class="k">raise</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">conn</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Grad Cafe Analytics</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/scrape.html">scrape</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/clean.html">clean</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/load_data.html">load_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/query_data.html">query_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/flask_app.html">flask_app</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

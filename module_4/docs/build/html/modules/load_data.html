@@ -1,0 +1,195 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>load_data &mdash; Module 4 - Testing and Documentation Experiment Assignment 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="query_data" href="query_data.html" />
+    <link rel="prev" title="clean" href="clean.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Module 4 - Testing and Documentation Experiment Assignment
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="scrape.html">scrape</a></li>
+<li class="toctree-l1"><a class="reference internal" href="clean.html">clean</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">load_data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#src.load_data.create_table"><code class="docutils literal notranslate"><span class="pre">create_table()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.load_data.extract_program"><code class="docutils literal notranslate"><span class="pre">extract_program()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.load_data.extract_university"><code class="docutils literal notranslate"><span class="pre">extract_university()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.load_data.get_connection"><code class="docutils literal notranslate"><span class="pre">get_connection()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.load_data.get_is_american"><code class="docutils literal notranslate"><span class="pre">get_is_american()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.load_data.load_data"><code class="docutils literal notranslate"><span class="pre">load_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.load_data.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.load_data.parse_date"><code class="docutils literal notranslate"><span class="pre">parse_date()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.load_data.parse_decision"><code class="docutils literal notranslate"><span class="pre">parse_decision()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.load_data.parse_decision_date"><code class="docutils literal notranslate"><span class="pre">parse_decision_date()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.load_data.parse_float"><code class="docutils literal notranslate"><span class="pre">parse_float()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="query_data.html">query_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flask_app.html">flask_app</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Module 4 - Testing and Documentation Experiment Assignment</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">load_data</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/modules/load_data.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.load_data">
+<span id="load-data"></span><h1>load_data<a class="headerlink" href="#module-src.load_data" title="Link to this heading"></a></h1>
+<p>load_data.py - Load Grad Cafe data into PostgreSQL database.</p>
+<p>This script loads the LLM-extended applicant data into a PostgreSQL database
+for analysis. Uses DATABASE_URL environment variable when set.
+Idempotent: duplicate URLs are skipped via ON CONFLICT DO NOTHING.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="src.load_data.create_table">
+<span class="sig-prename descclassname"><span class="pre">src.load_data.</span></span><span class="sig-name descname"><span class="pre">create_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cur</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/load_data.html#create_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.load_data.create_table" title="Link to this definition"></a></dt>
+<dd><p>Create the applicants table if it doesn’t exist. url has UNIQUE for idempotency.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.load_data.extract_program">
+<span class="sig-prename descclassname"><span class="pre">src.load_data.</span></span><span class="sig-name descname"><span class="pre">extract_program</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">program_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/load_data.html#extract_program"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.load_data.extract_program" title="Link to this definition"></a></dt>
+<dd><p>Extract program name from program string like ‘Computer Science, MIT’.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.load_data.extract_university">
+<span class="sig-prename descclassname"><span class="pre">src.load_data.</span></span><span class="sig-name descname"><span class="pre">extract_university</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">program_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/load_data.html#extract_university"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.load_data.extract_university" title="Link to this definition"></a></dt>
+<dd><p>Extract university name from program string like ‘Computer Science, MIT’.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.load_data.get_connection">
+<span class="sig-prename descclassname"><span class="pre">src.load_data.</span></span><span class="sig-name descname"><span class="pre">get_connection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/load_data.html#get_connection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.load_data.get_connection" title="Link to this definition"></a></dt>
+<dd><p>Get DB connection using DATABASE_URL or fallback env vars.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.load_data.get_is_american">
+<span class="sig-prename descclassname"><span class="pre">src.load_data.</span></span><span class="sig-name descname"><span class="pre">get_is_american</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">us_int_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/load_data.html#get_is_american"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.load_data.get_is_american" title="Link to this definition"></a></dt>
+<dd><p>Convert US/International field to is_american text.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.load_data.load_data">
+<span class="sig-prename descclassname"><span class="pre">src.load_data.</span></span><span class="sig-name descname"><span class="pre">load_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cur</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/load_data.html#load_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.load_data.load_data" title="Link to this definition"></a></dt>
+<dd><p>Load data into the applicants table. Skips duplicates by url (idempotent).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.load_data.main">
+<span class="sig-prename descclassname"><span class="pre">src.load_data.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/load_data.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.load_data.main" title="Link to this definition"></a></dt>
+<dd><p>Main function to load data into PostgreSQL.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.load_data.parse_date">
+<span class="sig-prename descclassname"><span class="pre">src.load_data.</span></span><span class="sig-name descname"><span class="pre">parse_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/load_data.html#parse_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.load_data.parse_date" title="Link to this definition"></a></dt>
+<dd><p>Parse date string to datetime object.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.load_data.parse_decision">
+<span class="sig-prename descclassname"><span class="pre">src.load_data.</span></span><span class="sig-name descname"><span class="pre">parse_decision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">status_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/load_data.html#parse_decision"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.load_data.parse_decision" title="Link to this definition"></a></dt>
+<dd><p>Extract decision type from status string like ‘Accepted on 29 Jan’.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.load_data.parse_decision_date">
+<span class="sig-prename descclassname"><span class="pre">src.load_data.</span></span><span class="sig-name descname"><span class="pre">parse_decision_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">status_str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">term_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/load_data.html#parse_decision_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.load_data.parse_decision_date" title="Link to this definition"></a></dt>
+<dd><p>Extract decision date from status string.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.load_data.parse_float">
+<span class="sig-prename descclassname"><span class="pre">src.load_data.</span></span><span class="sig-name descname"><span class="pre">parse_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value_str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/load_data.html#parse_float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.load_data.parse_float" title="Link to this definition"></a></dt>
+<dd><p>Extract float value from string like ‘GPA 3.9’ or ‘GRE V 159’.</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="clean.html" class="btn btn-neutral float-left" title="clean" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="query_data.html" class="btn btn-neutral float-right" title="query_data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
