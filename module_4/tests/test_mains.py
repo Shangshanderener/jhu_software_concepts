@@ -1,6 +1,6 @@
 """Test main blocks using runpy."""
 
-import runpy
+
 import sys
 from unittest.mock import patch, MagicMock
 import unittest.mock

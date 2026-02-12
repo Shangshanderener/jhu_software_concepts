@@ -1,8 +1,10 @@
 import os
 import unittest
+import pytest
 from unittest.mock import patch, MagicMock
 from src import query_data
 
+@pytest.mark.db
 class TestQueryDataConnection(unittest.TestCase):
     """Test the database connection logic in query_data.py."""
 
