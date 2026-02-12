@@ -165,8 +165,10 @@ def create_app(
 # Default app instance for `flask run` or `python -m src.flask_app`
 app = create_app()
 
-if __name__ == '__main__':
-    def main():
-        """Run the app."""
-        app.run(host='0.0.0.0', port=8080, debug=True)
+def main():
+    """Run the app."""
+    app.run(host='0.0.0.0', port=8080, debug=True)
+
+
+if __name__ == '__main__':  # pragma: no cover
     main()

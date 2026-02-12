@@ -8,47 +8,28 @@ import pytest
 
 @pytest.mark.web
 def test_flask_app_main():
-    """Cover flask_app.py if __name__ == '__main__' block."""
+    """Cover flask_app.py main function."""
     # Mock create_app and app.run
     with patch('src.flask_app.create_app') as mock_create:
         mock_app = MagicMock()
         mock_create.return_value = mock_app
         
-        # Import and run main
+        # We need to mock 'src.flask_app.app' because main() calls app.run()
+        # The 'app' imported from src.flask_app is an instance.
+        # We can check if we can patch it.
+        # But wait, src.flask_app.app is created at module level.
+        # line 166: app = create_app()
+        # lines 169-171: main() calls app.run()
+        
+        # When we import flask_app, app is created.
+        # We want to verify app.run() is called.
+        
         from src import flask_app
-        # We need to simulate the 'main' function if it exists, or just the if __name__ == main block.
-        # usage: flask_app.py has a main() function.
-        if hasattr(flask_app, 'main'):
+        
+        # Mock the app.run method on the global 'app' object in flask_app
+        with patch.object(flask_app.app, 'run') as mock_run:
             flask_app.main()
-        else:
-            # If no main function, we can't easily test the if __name__ block without runpy
-            # BUT, src/flask_app.py DOES have a main() function:
-            # 169:     def main():
-            # 170:         """Run the app."""
-            # 171:         app.run(host='0.0.0.0', port=8080, debug=True)
-            # 172:     main()
-            # Wait, line 172 calls main().
-            # IMPORTANT: The main() function in flask_app.py is defined INSIDE the if __name__ block?
-            # No, looking at file:
-            # 168: if __name__ == '__main__':
-            # 169:     def main():
-            # ...
-            # 172:     main()
-            # So main() is NOT available to import if we just import flask_app.
-            # So for flask_app, we MUST use runpy or skip coverage of that block.
-            # However, since flask_app line 168 is `if __name__`, the definition of main is inside.
-            # So we can't call it via import.
-            # We will stick to runpy for flask_app because it's defined inside the block.
-            # BUT, to capture coverage, maybe we can ignore it?
-            # The coverage failure reported flask_app missing 169-172.
-            # If we use runpy, it should cover it.
-            # The issue with runpy is likely the module reloading.
-            # For now, I will leave flask_app with runpy, but fix load_data which IS importable?
-            # load_data.py has main() at top level?
-            # Let's check load_data structure.
-            pass
-        with patch('flask.Flask.run'):
-             runpy.run_module('src.flask_app', run_name='__main__')
+            mock_run.assert_called_with(host='0.0.0.0', port=8080, debug=True)
 
 @pytest.mark.db
 def test_load_data_main():
