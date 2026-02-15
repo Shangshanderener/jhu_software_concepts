@@ -1,25 +1,9 @@
-...................ss........ss..............................            [100%]
-=============================== warnings summary ===============================
-tests/test_mains.py::test_flask_app_main
-  <frozen runpy>:128: RuntimeWarning: 'src.flask_app' found in sys.modules after import of package 'src', but prior to execution of 'src.flask_app'; this may result in unpredictable behaviour
-
-tests/test_mains.py::test_load_data_main
-  <frozen runpy>:128: RuntimeWarning: 'src.load_data' found in sys.modules after import of package 'src', but prior to execution of 'src.load_data'; this may result in unpredictable behaviour
-
-tests/test_mains.py::test_query_data_main
-tests/test_mains.py::test_query_data_main_mismatch
-  <frozen runpy>:128: RuntimeWarning: 'src.query_data' found in sys.modules after import of package 'src', but prior to execution of 'src.query_data'; this may result in unpredictable behaviour
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-================================ tests coverage ================================
-_______________ coverage: platform darwin, python 3.13.1-final-0 _______________
-
 Name                Stmts   Miss  Cover   Missing
 -------------------------------------------------
-src/flask_app.py       79      0   100%
-src/load_data.py      141      0   100%
-src/query_data.py     104      0   100%
+src/flask_app.py       77      0   100%
+src/load_data.py      139      0   100%
+src/query_data.py     102      0   100%
 -------------------------------------------------
-TOTAL                 324      0   100%
+TOTAL                 318      0   100%
 Required test coverage of 100% reached. Total coverage: 100.00%
-57 passed, 4 skipped, 4 warnings in 0.84s
+60 passed, 4 skipped in 0.82s
