@@ -24,7 +24,7 @@ DB_CONFIG = {
 }
 
 # Path to the LLM-extended data file
-DATA_FILE = 'llm_extend_applicant_data_liv.json'
+DATA_FILE = 'module_2/llm_extend_applicant_data.json'
 
 
 def parse_date(date_str):
@@ -165,19 +165,19 @@ def load_data(cur, data):
     
     count = 0
     for entry in data:
-        # Parse fields - using correct JSON field names
+        # Parse fields - using correct JSON field names from module_2 scraping
         program = entry.get('program', '')
         comments = entry.get('comments', '')
         date_added = parse_date(entry.get('date_added', ''))
-        url = entry.get('overview_url', '')  # JSON uses 'overview_url'
-        status = entry.get('applicant_status', '')  # JSON uses 'applicant_status'
-        term = entry.get('start_term', '')  # JSON uses 'start_term'
-        us_or_international = get_is_american(entry.get('citizenship', ''))  # JSON uses 'citizenship'
-        gpa = parse_float(entry.get('gpa', ''))  # JSON uses lowercase 'gpa'
-        gre = parse_float(entry.get('gre_general', ''))  # JSON uses 'gre_general'
-        gre_v = parse_float(entry.get('gre_verbal', ''))  # JSON uses 'gre_verbal'
-        gre_aw = parse_float(entry.get('gre_aw', ''))  # JSON uses 'gre_aw'
-        degree = entry.get('degree_level', '')  # JSON uses 'degree_level'
+        url = entry.get('url', '')
+        status = entry.get('status', '')
+        term = entry.get('term', '')
+        us_or_international = get_is_american(entry.get('US/International', ''))
+        gpa = parse_float(entry.get('GPA', ''))
+        gre = parse_float(entry.get('GRE', ''))
+        gre_v = parse_float(entry.get('GRE_V', ''))
+        gre_aw = parse_float(entry.get('GRE_AW', ''))
+        degree = entry.get('Degree', '')
         llm_program = entry.get('llm-generated-program', '')
         llm_uni = entry.get('llm-generated-university', '')
         

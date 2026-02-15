@@ -41,7 +41,7 @@ DB_CONFIG = {
 python load_data.py
 ```
 
-This loads data from `llm_extend_applicant_data_liv.json` into the PostgreSQL database.
+This loads data from `module_2/llm_extend_applicant_data.json` into the PostgreSQL database.
 
 ### 4. Run the Flask Application
 ```bash
@@ -56,15 +56,15 @@ The `load_data.py` script expects JSON data with these fields:
 | JSON Field | Database Column |
 |------------|-----------------|
 | `program` | `program` |
-| `start_term` | `term` |
-| `applicant_status` | `status` |
-| `citizenship` | `us_or_international` |
-| `gpa` | `gpa` |
-| `gre_general` | `gre` |
-| `gre_verbal` | `gre_v` |
-| `gre_aw` | `gre_aw` |
-| `degree_level` | `degree` |
-| `overview_url` | `url` |
+| `term` | `term` |
+| `status` | `status` |
+| `US/International` | `us_or_international` |
+| `GPA` | `gpa` |
+| `GRE` | `gre` |
+| `GRE_V` | `gre_v` |
+| `GRE_AW` | `gre_aw` |
+| `Degree` | `degree` |
+| `url` | `url` |
 | `llm-generated-program` | `llm_generated_program` |
 | `llm-generated-university` | `llm_generated_university` |
 

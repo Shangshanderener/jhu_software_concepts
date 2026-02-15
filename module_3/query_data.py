@@ -188,23 +188,34 @@ def q6_fall_2026_accepted_gpa():
 # Question 7: How many entries are from applicants who applied to JHU for a 
 #             masters degrees in Computer Science?
 # ============================================================================
+
 def q7_jhu_masters_cs_count():
     """
     Count JHU Masters in Computer Science applications.
     
-    Query explanation: We search for 'Johns Hopkins' or 'JHU' in program field,
-    'Masters' in degree, and 'Computer Science' in program.
+    Query explanation: We search for 'Johns Hopkins' or 'JHU' in program field
+    OR llm_generated_university field to be more robust.
+    'Masters' in degree, and 'Computer Science' in program or llm_generated_program.
     Using ILIKE for case-insensitive matching.
     """
     query = """
         SELECT COUNT(*)
         FROM applicants
-        WHERE (program ILIKE '%Johns Hopkins%' OR program ILIKE '%JHU%')
-          AND degree ILIKE '%Masters%'
-          AND program ILIKE '%Computer Science%';
+        WHERE (
+            program ILIKE '%Johns Hopkins%' 
+            OR program ILIKE '%JHU%'
+            OR llm_generated_university ILIKE '%Johns Hopkins%'
+            OR llm_generated_university ILIKE '%JHU%'
+        )
+        AND degree ILIKE '%Masters%'
+        AND (
+            program ILIKE '%Computer Science%'
+            OR llm_generated_program ILIKE '%Computer Science%'
+        );
     """
     result = execute_query(query)
     return result[0][0] if result else 0
+
 
 
 # ============================================================================

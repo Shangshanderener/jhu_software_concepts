@@ -7,6 +7,7 @@ functionality to pull new data from Grad Cafe and update the analysis.
 """
 
 import os
+import sys
 import subprocess
 import threading
 from flask import Flask, render_template, jsonify, request
@@ -66,7 +67,7 @@ def pull_data():
             
             # Run scrape with limited pages for demo (adjust as needed)
             result = subprocess.run(
-                ['python3', scrape_script, '--pages', '10', '--output', output_file],
+                [sys.executable, scrape_script, '--pages', '10', '--output', output_file],
                 capture_output=True,
                 text=True,
                 timeout=600  # 10 minute timeout
@@ -78,7 +79,7 @@ def pull_data():
                 cleaned_file = os.path.join(module_2_dir, 'cleaned_applicant_data.json')
                 
                 clean_result = subprocess.run(
-                    ['python3', clean_script, '--input', output_file, '--output', cleaned_file],
+                    [sys.executable, clean_script, '--input', output_file, '--output', cleaned_file],
                     capture_output=True,
                     text=True,
                     timeout=300
@@ -91,7 +92,7 @@ def pull_data():
                     llm_script = os.path.join(llm_hosting_dir, 'app.py')
                     llm_output_file = os.path.join(module_2_dir, 'llm_extend_applicant_data.json')
                     llm_result = subprocess.run(
-                        ['python3', llm_script, '--file', cleaned_file, '--out', llm_output_file],
+                        [sys.executable, llm_script, '--file', cleaned_file, '--out', llm_output_file],
                         cwd=llm_hosting_dir,
                         capture_output=True,
                         text=True,
@@ -103,7 +104,7 @@ def pull_data():
                         # Load new data into database
                         load_script = os.path.join(base_dir, 'load_data.py')
                         subprocess.run(
-                            ['python3', load_script, llm_output_file],
+                            [sys.executable, load_script, llm_output_file],
                             capture_output=True,
                             text=True,
                             timeout=300
