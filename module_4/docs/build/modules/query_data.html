@@ -1,0 +1,250 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>query_data &mdash; Module 4 - Testing and Documentation Experiment Assignment 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="flask_app" href="flask_app.html" />
+    <link rel="prev" title="load_data" href="load_data.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Module 4 - Testing and Documentation Experiment Assignment
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="scrape.html">scrape</a></li>
+<li class="toctree-l1"><a class="reference internal" href="clean.html">clean</a></li>
+<li class="toctree-l1"><a class="reference internal" href="load_data.html">load_data</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">query_data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.execute_query"><code class="docutils literal notranslate"><span class="pre">execute_query()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.get_all_results"><code class="docutils literal notranslate"><span class="pre">get_all_results()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.get_connection"><code class="docutils literal notranslate"><span class="pre">get_connection()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.q10_top_universities_by_acceptance_rate"><code class="docutils literal notranslate"><span class="pre">q10_top_universities_by_acceptance_rate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.q11_stats_by_degree_type"><code class="docutils literal notranslate"><span class="pre">q11_stats_by_degree_type()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.q1_fall_2026_count"><code class="docutils literal notranslate"><span class="pre">q1_fall_2026_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.q2_international_percentage"><code class="docutils literal notranslate"><span class="pre">q2_international_percentage()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.q3_average_scores"><code class="docutils literal notranslate"><span class="pre">q3_average_scores()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.q4_american_fall_2026_gpa"><code class="docutils literal notranslate"><span class="pre">q4_american_fall_2026_gpa()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.q5_fall_2025_acceptance_rate"><code class="docutils literal notranslate"><span class="pre">q5_fall_2025_acceptance_rate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.q6_fall_2026_accepted_gpa"><code class="docutils literal notranslate"><span class="pre">q6_fall_2026_accepted_gpa()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.q7_jhu_masters_cs_count"><code class="docutils literal notranslate"><span class="pre">q7_jhu_masters_cs_count()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.q8_elite_phd_cs_2026_accepts"><code class="docutils literal notranslate"><span class="pre">q8_elite_phd_cs_2026_accepts()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src.query_data.q9_elite_phd_cs_2026_llm_accepts"><code class="docutils literal notranslate"><span class="pre">q9_elite_phd_cs_2026_llm_accepts()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="flask_app.html">flask_app</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ops.html">Operational Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting.html">Troubleshooting</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Module 4 - Testing and Documentation Experiment Assignment</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">query_data</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/modules/query_data.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-src.query_data">
+<span id="query-data"></span><h1>query_data<a class="headerlink" href="#module-src.query_data" title="Link to this heading"></a></h1>
+<p>query_data.py - SQL queries for Grad Cafe applicant data analysis.</p>
+<p>This module provides functions to execute SQL queries against the PostgreSQL
+database to answer the assignment questions.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.execute_query">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">execute_query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#execute_query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.execute_query" title="Link to this definition"></a></dt>
+<dd><p>Execute a query and return results.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.get_all_results">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">get_all_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#get_all_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.get_all_results" title="Link to this definition"></a></dt>
+<dd><p>Get all query results as a dictionary.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.get_connection">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">get_connection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#get_connection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.get_connection" title="Link to this definition"></a></dt>
+<dd><p>Get a database connection using DATABASE_URL or fallback config.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.main">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.main" title="Link to this definition"></a></dt>
+<dd><p>Run all queries and print results.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.q10_top_universities_by_acceptance_rate">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">q10_top_universities_by_acceptance_rate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#q10_top_universities_by_acceptance_rate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.q10_top_universities_by_acceptance_rate" title="Link to this definition"></a></dt>
+<dd><p>Find top universities by acceptance rate.</p>
+<p>Query explanation: We group by university, count total applications and
+acceptances, filter for universities with at least 20 applications,
+then order by acceptance rate descending.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.q11_stats_by_degree_type">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">q11_stats_by_degree_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#q11_stats_by_degree_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.q11_stats_by_degree_type" title="Link to this definition"></a></dt>
+<dd><p>Calculate statistics by degree type.</p>
+<p>Query explanation: We group by degree type and calculate average GPA
+and acceptance rate for each degree category.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.q1_fall_2026_count">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">q1_fall_2026_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#q1_fall_2026_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.q1_fall_2026_count" title="Link to this definition"></a></dt>
+<dd><p>Count entries for Fall 2026 applications.</p>
+<p>Query explanation: We filter the ‘term’ column for entries containing
+‘Fall 2026’ to count applicants for that specific term.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.q2_international_percentage">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">q2_international_percentage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#q2_international_percentage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.q2_international_percentage" title="Link to this definition"></a></dt>
+<dd><p>Calculate percentage of international students.</p>
+<p>Query explanation: We count entries where us_or_international is ‘International’
+and divide by total count, then multiply by 100 for percentage.
+ROUND is used to limit to 2 decimal places.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.q3_average_scores">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">q3_average_scores</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#q3_average_scores"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.q3_average_scores" title="Link to this definition"></a></dt>
+<dd><p>Calculate average GPA, GRE, GRE_V, and GRE_AW for applicants who provide them.</p>
+<p>Query explanation: We use AVG which automatically ignores NULL values,
+so only applicants who provided each metric are included in that average.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.q4_american_fall_2026_gpa">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">q4_american_fall_2026_gpa</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#q4_american_fall_2026_gpa"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.q4_american_fall_2026_gpa" title="Link to this definition"></a></dt>
+<dd><p>Calculate average GPA of American students for Fall 2026.</p>
+<p>Query explanation: We filter for American students (us_or_international = ‘American’)
+AND Fall 2026 term, then calculate the average GPA.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.q5_fall_2025_acceptance_rate">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">q5_fall_2025_acceptance_rate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#q5_fall_2025_acceptance_rate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.q5_fall_2025_acceptance_rate" title="Link to this definition"></a></dt>
+<dd><p>Calculate acceptance percentage for Fall 2025.</p>
+<p>Query explanation: We count accepted entries (status contains ‘Accepted’)
+for Fall 2025 and divide by total Fall 2025 entries.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.q6_fall_2026_accepted_gpa">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">q6_fall_2026_accepted_gpa</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#q6_fall_2026_accepted_gpa"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.q6_fall_2026_accepted_gpa" title="Link to this definition"></a></dt>
+<dd><p>Calculate average GPA of accepted Fall 2026 applicants.</p>
+<p>Query explanation: We filter for Fall 2026 term AND accepted status,
+then calculate average GPA of those applicants.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.q7_jhu_masters_cs_count">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">q7_jhu_masters_cs_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#q7_jhu_masters_cs_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.q7_jhu_masters_cs_count" title="Link to this definition"></a></dt>
+<dd><p>Count JHU Masters in Computer Science applications.</p>
+<p>Query explanation: We search for ‘Johns Hopkins’ or ‘JHU’ in program field,
+‘Masters’ in degree, and ‘Computer Science’ in program.
+Using ILIKE for case-insensitive matching.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.q8_elite_phd_cs_2026_accepts">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">q8_elite_phd_cs_2026_accepts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#q8_elite_phd_cs_2026_accepts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.q8_elite_phd_cs_2026_accepts" title="Link to this definition"></a></dt>
+<dd><p>Count PhD CS acceptances from elite universities for 2026.</p>
+<p>Query explanation: We filter for 2026 (either Fall or Spring),
+accepted status, PhD degree, Computer Science program, and
+specific universities (Georgetown, MIT, Stanford, CMU).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.query_data.q9_elite_phd_cs_2026_llm_accepts">
+<span class="sig-prename descclassname"><span class="pre">src.query_data.</span></span><span class="sig-name descname"><span class="pre">q9_elite_phd_cs_2026_llm_accepts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/src/query_data.html#q9_elite_phd_cs_2026_llm_accepts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.query_data.q9_elite_phd_cs_2026_llm_accepts" title="Link to this definition"></a></dt>
+<dd><p>Count PhD CS acceptances from elite universities using LLM-generated fields.</p>
+<p>Query explanation: Same as Q8 but using llm_generated_university and
+llm_generated_program instead of program field.</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="load_data.html" class="btn btn-neutral float-left" title="load_data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="flask_app.html" class="btn btn-neutral float-right" title="flask_app" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

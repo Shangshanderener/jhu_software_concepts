@@ -2,55 +2,80 @@
 
 **Author:** Zicheng Han
 
-Grad Café Analytics with automated tests and Sphinx documentation.
+Grad Café Analytics with automated tests, Sphinx documentation, and CI/CD.
+
+## Project Structure
+
+```
+module_4/
+├── src/               # Application code (Flask, ETL/DB, queries)
+├── tests/             # Pytest suite
+├── docs/              # Sphinx documentation source
+├── .github/           # GitHub Actions workflows
+├── pytest.ini         # Test configuration and markers
+├── requirements.txt   # Project dependencies
+└── README.md          # This file
+```
 
 ## Setup
 
-```bash
-# Create virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
+1. **Create Virtual Environment**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   ```
 
-# Install dependencies
-pip install -r requirements.txt
+2. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## Configuration
+
+Set the `DATABASE_URL` environment variable for local development with a real database:
+```bash
+export DATABASE_URL=postgresql://user:pass@host:5432/gradcafe
 ```
+*Note: Tests will automatically use a mock backend if this variable is not set.*
 
-## Environment Variables
-
-- `DATABASE_URL` - PostgreSQL connection string (e.g. `postgresql://user:pass@host:5432/gradcafe`)
-- Fallback: `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`
-
-## Run Application
+## Running the Application
 
 ```bash
-
-export DATABASE_URL=postgresql://...
 python -m src.flask_app
-# or: flask --app src.flask_app run
+# Access at http://localhost:8080
 ```
 
-## Run Tests
+## Running Tests
+
+Run the full test suite (100% coverage required):
 
 ```bash
-
-export DATABASE_URL=postgresql://...
 pytest -m "web or buttons or analysis or db or integration"
 ```
 
-With coverage:
+Generate coverage report:
 ```bash
-pytest -m "web or buttons or analysis or db or integration" --cov=src --cov-report=term-missing --cov-fail-under=100
+pytest --cov=src --cov-report=term-missing --cov-fail-under=100
 ```
+
+### Markers
+- `web`: Flask route/page tests
+- `buttons`: Button endpoints & busy-state behavior
+- `analysis`: Analysis formatting/rounding
+- `db`: Database schema/inserts/selects
+- `integration`: End-to-end flows
 
 ## Documentation
 
-See [docs](docs/) for Sphinx documentation. Published at: [Read the Docs link - add after publishing]
+- **Local Build**:
+  ```bash
+  sphinx-build -b html docs/source docs/build
+  ```
+- **Published Docs**: [Link to GitHub Pages]
 
-## CI
+## CI/CD
 
-GitHub Actions workflow runs tests on push/PR. See `.github/workflows/tests.yml`.
+The GitHub Actions workflow (`.github/workflows/tests.yml`) performs:
+1. **Tests**: Runs `pytest` against a PostgreSQL service container.
+2. **Docs**: Builds and deploys Sphinx documentation to GitHub Pages (on `main` branch).
 
-## Deliverables Notes
-
-- **CI Success Image**: Please add `actions_success.png` to this directory after a successful run.
-- **ReadTheDocs**: [Insert Link Here]

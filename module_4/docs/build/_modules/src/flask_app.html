@@ -1,0 +1,286 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.flask_app &mdash; Module 4 - Testing and Documentation Experiment Assignment 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Module 4 - Testing and Documentation Experiment Assignment
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/scrape.html">scrape</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/clean.html">clean</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/load_data.html">load_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/query_data.html">query_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules/flask_app.html">flask_app</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ops.html">Operational Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting.html">Troubleshooting</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Module 4 - Testing and Documentation Experiment Assignment</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.flask_app</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.flask_app</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">flask_app.py - Flask application for Grad Cafe analysis webpage.</span>
+
+<span class="sd">This application displays the results of PostgreSQL queries and provides</span>
+<span class="sd">functionality to pull new data from Grad Cafe and update the analysis.</span>
+
+<span class="sd">Supports create_app() factory for testing, DATABASE_URL, and dependency injection.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">render_template</span><span class="p">,</span> <span class="n">jsonify</span>
+
+<span class="c1"># Import will be resolved at runtime - query module uses get_connection from env</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">query_data</span>
+
+
+<div class="viewcode-block" id="create_app">
+<a class="viewcode-back" href="../../modules/flask_app.html#src.flask_app.create_app">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_app</span><span class="p">(</span>
+    <span class="n">scraper_loader_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">query_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Application factory for Flask app.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        scraper_loader_fn: Optional callable that performs scrape+clean+load.</span>
+<span class="sd">            Called with no args. Used for testing with fake data.</span>
+<span class="sd">            If None, uses default subprocess-based implementation.</span>
+<span class="sd">        query_fn: Optional callable that returns analysis results dict.</span>
+<span class="sd">            If None, uses query_data.get_all_results.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Configured Flask application.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+    
+    <span class="c1"># Use injected or default implementations</span>
+    <span class="n">_scraper_loader</span> <span class="o">=</span> <span class="n">scraper_loader_fn</span>
+    <span class="n">_query_fn</span> <span class="o">=</span> <span class="n">query_fn</span> <span class="ow">or</span> <span class="n">query_data</span><span class="o">.</span><span class="n">get_all_results</span>
+
+    <span class="c1"># Global state for tracking scraping process</span>
+    <span class="n">scraping_state</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;is_running&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;process&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;lock&#39;</span><span class="p">:</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_default_scraper_loader</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Default implementation: run scrape -&gt; clean -&gt; llm -&gt; load via subprocess.&quot;&quot;&quot;</span>
+        <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+        <span class="n">module_2_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="s1">&#39;module_2&#39;</span><span class="p">)</span>
+        <span class="n">llm_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_2_dir</span><span class="p">,</span> <span class="s1">&#39;llm_hosting&#39;</span><span class="p">)</span>
+        <span class="n">scrape_script</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_2_dir</span><span class="p">,</span> <span class="s1">&#39;scrape.py&#39;</span><span class="p">)</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_2_dir</span><span class="p">,</span> <span class="s1">&#39;applicant_data.json&#39;</span><span class="p">)</span>
+        <span class="n">clean_script</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_2_dir</span><span class="p">,</span> <span class="s1">&#39;clean.py&#39;</span><span class="p">)</span>
+        <span class="n">cleaned_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_2_dir</span><span class="p">,</span> <span class="s1">&#39;cleaned_applicant_data.json&#39;</span><span class="p">)</span>
+        <span class="n">llm_script</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">llm_dir</span><span class="p">,</span> <span class="s1">&#39;app.py&#39;</span><span class="p">)</span>
+        <span class="n">llm_output</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_2_dir</span><span class="p">,</span> <span class="s1">&#39;llm_extend_applicant_data.json&#39;</span><span class="p">)</span>
+        <span class="n">load_script</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="s1">&#39;load_data.py&#39;</span><span class="p">)</span>
+        
+        <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="n">scrape_script</span><span class="p">,</span> <span class="s1">&#39;--pages&#39;</span><span class="p">,</span> <span class="s1">&#39;10&#39;</span><span class="p">,</span> <span class="s1">&#39;--output&#39;</span><span class="p">,</span> <span class="n">output_file</span><span class="p">],</span>
+            <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">600</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Scraping failed: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">return</span>
+        
+        <span class="n">clean_result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="n">clean_script</span><span class="p">,</span> <span class="s1">&#39;--input&#39;</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="s1">&#39;--output&#39;</span><span class="p">,</span> <span class="n">cleaned_file</span><span class="p">],</span>
+            <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">300</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">clean_result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Cleaning failed: </span><span class="si">{</span><span class="n">clean_result</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">return</span>
+            
+        <span class="n">llm_result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="n">llm_script</span><span class="p">,</span> <span class="s1">&#39;--file&#39;</span><span class="p">,</span> <span class="n">cleaned_file</span><span class="p">,</span> <span class="s1">&#39;--out&#39;</span><span class="p">,</span> <span class="n">llm_output</span><span class="p">],</span>
+            <span class="n">cwd</span><span class="o">=</span><span class="n">llm_dir</span><span class="p">,</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">600</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">llm_result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;LLM failed: </span><span class="si">{</span><span class="n">llm_result</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">return</span>
+            
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="n">load_script</span><span class="p">,</span> <span class="n">llm_output</span><span class="p">],</span>
+            <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">300</span>
+        <span class="p">)</span>
+        <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Data scraping completed successfully!&#39;</span>
+
+    <span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+    <span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/analysis&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analysis</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Main analysis page showing all query results.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">_query_fn</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span>
+                <span class="s1">&#39;analysis.html&#39;</span><span class="p">,</span>
+                <span class="n">results</span><span class="o">=</span><span class="n">results</span><span class="p">,</span>
+                <span class="n">is_scraping</span><span class="o">=</span><span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;is_running&#39;</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span>
+                <span class="s1">&#39;analysis.html&#39;</span><span class="p">,</span>
+                <span class="n">results</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">error</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
+                <span class="n">is_scraping</span><span class="o">=</span><span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;is_running&#39;</span><span class="p">]</span>
+            <span class="p">)</span>
+
+    <span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/pull-data&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pull_data</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;API endpoint to trigger data scraping. Returns 200 with ok:true or 409 when busy.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;lock&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;is_running&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;ok&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;busy&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}),</span> <span class="mi">409</span>
+            <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;is_running&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Starting data scrape...&#39;</span>
+
+        <span class="n">run_fn</span> <span class="o">=</span> <span class="n">_scraper_loader</span> <span class="k">if</span> <span class="n">_scraper_loader</span> <span class="k">else</span> <span class="n">_default_scraper_loader</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">run_scrape</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">run_fn</span><span class="p">()</span>
+            <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">TimeoutExpired</span><span class="p">:</span>
+                <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Scraping timed out.&#39;</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;lock&#39;</span><span class="p">]:</span>
+                    <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;is_running&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">run_scrape</span><span class="p">)</span>
+        <span class="n">thread</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;ok&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Data scraping started.&#39;</span><span class="p">})</span>
+
+    <span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/scrape-status&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scrape_status</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check current scraping status.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s1">&#39;is_running&#39;</span><span class="p">:</span> <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;is_running&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span>
+        <span class="p">})</span>
+
+    <span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/update-analysis&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_analysis</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update/refresh analysis. Returns 409 when pull is in progress.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">scraping_state</span><span class="p">[</span><span class="s1">&#39;is_running&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;ok&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;busy&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}),</span> <span class="mi">409</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s1">&#39;ok&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Analysis updated.&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;is_scraping&#39;</span><span class="p">:</span> <span class="kc">False</span>
+        <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">app</span></div>
+
+
+
+<span class="c1"># Default app instance for `flask run` or `python -m src.flask_app`</span>
+<span class="n">app</span> <span class="o">=</span> <span class="n">create_app</span><span class="p">()</span>
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../modules/flask_app.html#src.flask_app.main">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the app.&quot;&quot;&quot;</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s1">&#39;0.0.0.0&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

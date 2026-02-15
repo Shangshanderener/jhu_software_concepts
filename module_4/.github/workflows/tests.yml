@@ -1,20 +1,21 @@
-name: Tests
+name: Run Tests
 
 on:
   push:
-    branches: [main, master]
+    branches: [ "main" ]
   pull_request:
-    branches: [main, master]
+    branches: [ "main" ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:15
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: password
           POSTGRES_DB: gradcafe
         ports:
           - 5432:5432
@@ -25,21 +26,54 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Run Tests
+      env:
+        DATABASE_URL: postgresql://postgres:password@localhost:5432/gradcafe
+      # We skip 'module_2' directory if it contains large files or specific huge venvs not needed for these tests
+      # But our tests import module_2/scrape.py etc, so we need it.
+      # Assuming module_2 is present.
+      run: |
+        export PYTHONPATH=$PYTHONPATH:$(pwd)
+        pytest -v -m "web or buttons or analysis or db or integration" --cov=src --cov-report=term-missing --cov-fail-under=100
+
+  docs:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
+          pip install sphinx sphinx_rtd_theme
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-          pip install -r requirements.txt
-
-      - name: Run pytest
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gradcafe
+      - name: Build Sphinx Docs
         run: |
+          sphinx-build -b html docs/source docs/build
 
-          pytest -m "web or buttons or analysis or db or integration" --cov=src --cov-report=term-missing --cov-fail-under=100
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/build

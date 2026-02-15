@@ -78,27 +78,32 @@ def _fake_records():
 
 
 @pytest.mark.db
-def test_insert_on_pull_target_table_empty_before(client_with_fake_loader):
+def test_insert_on_pull_target_table_empty_before(client_with_fake_loader, db_backend):
     """Before pull, target table can be empty; after POST /pull-data new rows exist."""
-    url = os.environ.get('DATABASE_URL')
-    if not url:
-        pytest.skip('DATABASE_URL not set')
-    conn = psycopg.connect(url)
+    # Setup
+    conn_obj = psycopg.connect('mock://' if db_backend['type'] == 'mock' else os.environ['DATABASE_URL'])
+    
     try:
-        _ensure_table(conn)
-        _truncate(conn)
-        assert _count_rows(conn) == 0
+        if db_backend['type'] == 'real':
+            _ensure_table(conn_obj)
+            _truncate(conn_obj)
+            assert _count_rows(conn_obj) == 0
+        else:
+            # Mock setup - mock fetchone for initial count check
+            db_backend['cur'].fetchone.side_effect = [(0,), (2,)] # Initial check, then post-load check
     finally:
-        conn.close()
+        conn_obj.close()
 
     # Use app with loader that actually inserts
     import json
     with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
         json.dump(_fake_records(), f)
         data_file = f.name
+        
     try:
         def loader():
-            conn = _get_connection()
+            # Use psycopg.connect which is patched if needed
+            conn = psycopg.connect('mock://' if db_backend['type'] == 'mock' else os.environ.get('DATABASE_URL'))
             try:
                 with conn.cursor() as cur:
                     load_data.create_table(cur)
@@ -106,17 +111,31 @@ def test_insert_on_pull_target_table_empty_before(client_with_fake_loader):
                 conn.commit()
             finally:
                 conn.close()
+                
         from src.flask_app import create_app
         app = create_app(scraper_loader_fn=loader)
         c = app.test_client()
         resp = c.post('/api/pull-data')
         assert resp.status_code == 200
+        
         import time
         time.sleep(0.3)  # Wait for loader thread
-        conn2 = _get_connection()
+        
+        # Verify
+        conn2 = psycopg.connect('mock://' if db_backend['type'] == 'mock' else os.environ.get('DATABASE_URL'))
         try:
-            count = _count_rows(conn2)
-            assert count >= 2
+            if db_backend['type'] == 'real':
+                count = _count_rows(conn2)
+                assert count >= 2
+            else:
+                 # Check if loader called cursor.execute with INSERT
+                 # We can check specific calls on the mock_cur (from fixture)
+                 mock_cur = db_backend['cur']
+                 
+                 # Verify execute was called with INSERT statement
+                 assert mock_cur.execute.called
+                 calls = [c for c in mock_cur.execute.call_args_list if 'INSERT INTO' in str(c)]
+                 assert len(calls) >= 2, "Should have inserted at least 2 records"
         finally:
             conn2.close()
     finally:
@@ -124,24 +143,37 @@ def test_insert_on_pull_target_table_empty_before(client_with_fake_loader):
 
 
 @pytest.mark.db
-def test_idempotency_duplicate_pulls_no_duplicates():
+def test_idempotency_duplicate_pulls_no_duplicates(db_backend):
     """Duplicate rows do not create duplicates (uniqueness on url)."""
-    url = os.environ.get('DATABASE_URL')
-    if not url:
-        pytest.skip('DATABASE_URL not set')
-    conn = _get_connection()
+    conn = psycopg.connect('mock://' if db_backend['type'] == 'mock' else os.environ.get('DATABASE_URL'))
+    
     try:
-        _ensure_table(conn)
-        _truncate(conn)
-        with conn.cursor() as cur:
-            load_data.load_data(cur, _fake_records())
-        conn.commit()
-        count1 = _count_rows(conn)
-        with conn.cursor() as cur:
-            load_data.load_data(cur, _fake_records())
-        conn.commit()
-        count2 = _count_rows(conn)
-        assert count1 == count2
+        if db_backend['type'] == 'real':
+            _ensure_table(conn)
+            _truncate(conn)
+            with conn.cursor() as cur:
+                load_data.load_data(cur, _fake_records())
+            conn.commit()
+            count1 = _count_rows(conn)
+            with conn.cursor() as cur:
+                load_data.load_data(cur, _fake_records())
+            conn.commit()
+            count2 = _count_rows(conn)
+            assert count1 == count2
+        else:
+            # For mock, we can verify that the SQL contains ON CONFLICT DO NOTHING
+            
+            # The test actually runs load_data.
+            with conn.cursor() as cur:
+                load_data.load_data(cur, _fake_records())
+                
+            mock_cur = db_backend['cur']
+            # Verify the INSERT statement contains ON CONFLICT
+            # We look at the last execute call
+            args, _ = mock_cur.execute.call_args
+            sql = args[0]
+            assert 'ON CONFLICT (url) DO NOTHING' in sql
+            
     finally:
         conn.close()
 
